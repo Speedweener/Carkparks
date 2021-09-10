@@ -9,6 +9,8 @@ import math
 import gmplot
 import random
 
+import pandas as pd
+
 color_codes = {
     0: "#ff0000",  # RED
     1: "#ffa500",  # ORANGE
@@ -30,7 +32,6 @@ def f(x, y):
 
 
 def interpolate(lat_sample, long_sample, values, points=100, levels=10, method='cubic'):
-
     # Grid does not have to be that many points
     lat_space = np.linspace(min(lat_sample), max(lat_sample), points)
     long_space = np.linspace(min(long_sample), max(long_sample), points)
@@ -48,8 +49,6 @@ def interpolate(lat_sample, long_sample, values, points=100, levels=10, method='
     coordinates
     '''
     return contour_map
-
-
 
 
 '''
@@ -249,7 +248,7 @@ def point_dist(x1, y1, x2, y2):
 
 
 def mid_point(coordinate_list):
-    return (max(coordinate_list) + min(coordinate_list))/2
+    return (max(coordinate_list) + min(coordinate_list)) / 2
 
 
 def generate_values():
@@ -267,7 +266,19 @@ def generate_values():
     for i in range(len(latitude_sample)):
         values.append(function_2(longitude_sample[i], latitude_sample[i]))
 
-    return latitude_sample, longitude_sample, values
+    # df = pd.read_csv(r'sample_data.csv')
+    # data = []
+    # data.append(latitude_sample)
+    # data.append(longitude_sample)
+    # data.append(values)
+    # df['Latitude(deg)'] = latitude_sample
+    # df['Longitude(deg)'] = longitude_sample
+    # df['Values'] = values
+    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values)),
+                      columns=['Latitude(deg)', 'Longitude(deg', 'Values'])
+
+    df.to_csv('sample_data2.csv')
+    # return latitude_sample, longitude_sample, values
 
 
 def gmap_output(lat_sample, long_sample, values):
@@ -412,4 +423,5 @@ def hole_plot():
 
 if __name__ == '__main__':
     # interpolation()
-    poly = gmap_output(generate_values())
+    # poly = gmap_output(generate_values())
+    generate_values()

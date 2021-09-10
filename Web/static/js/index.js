@@ -92,7 +92,7 @@
 
         var map = new google.maps.Map(document.getElementById("map-canvas"), {
             mapTypeId: "satellite",
-            zoom: 21,
+            zoom: 19,
             center: new google.maps.LatLng(lat, long),
 
             // mapTypeControl: true,
