@@ -10,45 +10,26 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'static/files'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# lat_sample, long_sample, values = gravity_plot.generate_values()
-# polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_sample, long_sample, values)
-
-# @app.route('/update_decimal', methods=['POST'])
-# def update_decimal():
-#     random_number = np.random.rand()
-#     return jsonify('', render_template('random_decimal_model.html', x=random_number))
-
-
-# @app.route('/')
-# def index():
-#     return render_template('index.html', polygon_array=polygons, color_bar=c_bar, lat=lat, long=long)
-#
-#
-# if __name__ == '__main__':
-#     app.run(debug=True)
-
-# # Root URL
-# @app.route('/')
-# def index():
-#      # Set The upload HTML template '\templates\index.html'
 
 # Get the uploaded files
 @app.route("/", methods=['GET', 'POST'])
 def uploadFiles():
 
-
     if request.method == 'GET':
         return render_template('index.html')
 
     else:
-
         csv_file = request.files['file']
         df = pd.read_csv(csv_file)
         lat_list = df['Latitude(deg)'].tolist()
         long_list = df['Longitude(deg)'].tolist()
         values_list = df['Values'].tolist()
+        if 'Tidal Correction' in df.columns:
+            tide_correction_list = df['Tidal Correction'].tolist()
+        else:
+            tide_correction_list = None
 
-        polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_list, long_list, values_list)
+        polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_list, long_list, values_list, tide_correction_list)
         return render_template('index.html', polygon_array=polygons, color_bar=c_bar, lat=lat, long=long)
 
 

@@ -258,13 +258,22 @@ def generate_values():
 
     latitude_sample = []
     longitude_sample = []
+    values = []
+    tidal_correction = []
+
     for i in range(200):
         latitude_sample.append(random.uniform(1.315709, 1.318058))
         longitude_sample.append(random.uniform(104.001393, 104.003131))
 
-    values = []
     for i in range(len(latitude_sample)):
         values.append(function_2(longitude_sample[i], latitude_sample[i]))
+
+    for i in range(len(latitude_sample)):
+        values.append(function_2(longitude_sample[i], latitude_sample[i]))
+
+    for i in range(len(latitude_sample)):
+        tidal_correction.append(random.uniform(1, -1))
+
 
     # df = pd.read_csv(r'sample_data.csv')
     # data = []
@@ -274,33 +283,58 @@ def generate_values():
     # df['Latitude(deg)'] = latitude_sample
     # df['Longitude(deg)'] = longitude_sample
     # df['Values'] = values
-    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values)),
-                      columns=['Latitude(deg)', 'Longitude(deg', 'Values'])
+    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values, tidal_correction)),
+                      columns=['Latitude(deg)', 'Longitude(deg)', 'Values', 'Tidal Correction'])
 
-    df.to_csv('sample_data2.csv')
+    df.to_csv('correction_data_1.csv')
+
+    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values)),
+                      columns=['Latitude(deg)', 'Longitude(deg)', 'Values'])
+    df.to_csv('without_correction_data_1.csv')
     # return latitude_sample, longitude_sample, values
 
 
-def gmap_output(lat_sample, long_sample, values):
-    contour_map = interpolate(lat_sample, long_sample, values, levels=15, points=100, method='cubic')
+def get_correction_values(values, tidal_correction):
+    correction_array = [values.copy()]
 
-    # contour_map.allsegs contain all the polygons sorted into different weights.
-    # Each weight will have certain areas(polygons), and each area will have different
-    # coordinates
-    # Last weight in contour_map.levels is ignored (Outermost contour) as it is not plotted
-    polygons = []
-    color_bar = []
-    same_weight_polygons = []
-    for weight in range(len(contour_map.allsegs)):
-        color_bar.append(contour_map.levels[weight])
-        for area in range(len(contour_map.allsegs[weight])):
-            dat0 = contour_map.allsegs[weight][area]
-            same_weight_polygons.append(polygon_hole_split(dat0))
+    new_arr = []
+    for i in range(len(values)):
+        new_arr.append(values[i] + tidal_correction[i])
+    correction_array.append(new_arr)
 
-        polygons.append(same_weight_polygons.copy())
-        same_weight_polygons.clear()
+    print(correction_array)
+    return correction_array
 
-    return polygons, color_bar, mid_point(lat_sample), mid_point(long_sample)
+
+def gmap_output(lat_sample, long_sample, values, tidal_correction=None):
+
+    plots = []
+    color_bars = []
+    correction_array = get_correction_values(values, tidal_correction)
+    for i in range(2):
+        contour_map = interpolate(lat_sample, long_sample, correction_array[i], levels=15, points=100, method='cubic')
+
+        # contour_map.allsegs contain all the polygons sorted into different weights.
+        # Each weight will have certain areas(polygons), and each area will have different
+        # coordinates
+        # Last weight in contour_map.levels is ignored (Outermost contour) as it is not plotted
+
+        polygons = []
+        color_bar = []
+        same_weight_polygons = []
+        for weight in range(len(contour_map.allsegs)):
+            color_bar.append(contour_map.levels[weight])
+            for area in range(len(contour_map.allsegs[weight])):
+                dat0 = contour_map.allsegs[weight][area]
+                same_weight_polygons.append(polygon_hole_split(dat0))
+
+            polygons.append(same_weight_polygons.copy())
+            same_weight_polygons.clear()
+
+        plots.append(polygons)
+        color_bars.append(color_bar)
+
+    return plots, color_bars, mid_point(lat_sample), mid_point(long_sample)
 
 
 def step_draw():

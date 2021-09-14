@@ -20,8 +20,11 @@
 
     }
 
-    var polygon_arr = [];
+    var polygon_arr = []
     var polygon_by_weight = [];
+
+
+    var plot_switch = 1;
 
 
     function toLatLong(polygon_with_holes){
@@ -34,9 +37,9 @@
         return split_polygon;
     }
 
-    function plotPolygon(polygon_path, map, weight){   
+    function plotPolygon(polygon_path, map, weight, plot){   
         
-        polygon_arr.push(new google.maps.Polygon({
+        polygon_arr[plot].push(new google.maps.Polygon({
           clickable: false,
           geodesic: true,
           fillColor: color[weight%16],
@@ -60,24 +63,14 @@
           div.className = "w3-bar-item w3-hover-red";
           div.addEventListener('mouseenter', e => {
             for(let j=0;j<polygon_by_weight[i].length; j++){
-              polygon_arr[polygon_by_weight[i][j]].setOptions({fillColor: "#000000"});
+              polygon_arr[1][polygon_by_weight[i][j]].setOptions({fillColor: "#000000"});
             }
-
-
-            // mouseTarget.style.border = '5px dotted orange';
-            // enterEventCount++;
-            // addListItem('This is mouseenter event ' + enterEventCount + '.');
           });
 
           div.addEventListener('mouseleave', e => {
             for(let j=0;j<polygon_by_weight[i].length; j++){
-              polygon_arr[polygon_by_weight[i][j]].setOptions({fillColor: color[i]});
+              polygon_arr[1][polygon_by_weight[i][j]].setOptions({fillColor: color[i]});
             }
-
-
-            // mouseTarget.style.border = '5px dotted orange';
-            // enterEventCount++;
-            // addListItem('This is mouseenter event ' + enterEventCount + '.');
           });
 
           
@@ -86,11 +79,11 @@
         }
     }
 
-
+    let map;
 
     function initialize(polygon_values, color_bar_values, lat, long) {
 
-        var map = new google.maps.Map(document.getElementById("map-canvas"), {
+        map = new google.maps.Map(document.getElementById("map-canvas"), {
             mapTypeId: "satellite",
             zoom: 19,
             center: new google.maps.LatLng(lat, long),
@@ -106,42 +99,55 @@
 
         document.getElementById("toggle-lines").addEventListener("click", toggleOutline);
 
+
+        document.getElementById("correction-1").addEventListener("click", toggleDrawing);
+
+
         var slider = document.getElementById("range-slider");
 
-        createColorBar(color_bar_values);
-        var color_bar_divs = document.getElementById("color-bar").getElementsByTagName("div");
+        // createColorBar(color_bar_values[0]);
+        // var color_bar_divs = document.getElementById("color-bar").getElementsByTagName("div");
 
 
 
 
 
         // Update the current slider value (each time you drag the slider handle)
-        slider.oninput = function() {
-          for(let i=0; i<polygon_arr.length;i++){
-            polygon_arr[i].setOptions({fillOpacity: parseFloat(this.value) });
-          }
+        // slider.oninput = function() {
+        //   for(let i=0; i<polygon_arr.length;i++){
+        //     polygon_arr[1][i].setOptions({fillOpacity: parseFloat(this.value) });
+        //   }
 
-          // for(let i=0; i<color_bar_divs.length;i++){
-          //   color_bar_divs[i].style.opacity = parseFloat(this.value);
-          // }
+        //   // for(let i=0; i<color_bar_divs.length;i++){
+        //   //   color_bar_divs[i].style.opacity = parseFloat(this.value);
+        //   // }
 
-        }
+        // }
 
         var polygon_path;
         var polygon_indexes = [];
         var sum = 0;
 
-        
-        for(let weight=0; weight<polygon_values.length; weight++){
-            for(let area=0; area<polygon_values[weight].length;area++){
+        for(let plot=0; plot<polygon_values.length; plot++) {
+          polygon_arr.push([]);
+          polygon_by_weight.push([]);
+
+          for(let weight=0; weight<polygon_values[plot].length; weight++){
+            for(let area=0; area<polygon_values[plot][weight].length;area++){
                 polygon_indexes.push(sum+area)
-                polygon_path = toLatLong(polygon_values[weight][area]);
-                plotPolygon(polygon_path, map, weight); 
+                polygon_path = toLatLong(polygon_values[plot][weight][area]);
+                plotPolygon(polygon_path, map, weight, plot); 
             }
-            sum += polygon_values[weight].length;
-            polygon_by_weight.push(polygon_indexes);
+            sum += polygon_values[plot][weight].length;
+            polygon_by_weight[plot].push(polygon_indexes);
             polygon_indexes = [];
+           }
+           sum = 0;
+
+
         }
+
+        
 
 
 
@@ -151,16 +157,15 @@
 
    function togglePlot() {
 
-    if(polygon_arr[0].getVisible()){
+    if(polygon_arr[0].getMap()){
       for(let i=0; i<polygon_arr.length;i++){
-        polygon_arr[i].setVisible(false);
+        polygon_arr[1][i].setMap(null);
       }
-
-
     }
     else{
       for(let i=0; i<polygon_arr.length;i++){
-        polygon_arr[i].setVisible(true);
+        polygon_arr[1][i].setMap(map);
+
       }
 
     }
@@ -171,17 +176,44 @@
     if (document.getElementById('toggle-lines').checked) 
     {
       for(let i=0; i<polygon_arr.length;i++){
-        polygon_arr[i].setOptions({strokeOpacity: 1});
+        polygon_arr[1][i].setOptions({strokeOpacity: 1});
       }
 
     } else {
       
       for(let i=0; i<polygon_arr.length;i++){
-        polygon_arr[i].setOptions({strokeOpacity: 0});
+        polygon_arr[1][i].setOptions({strokeOpacity: 0});
       }
 
     }
   }
+
+
+  function toggleDrawing() {
+
+    if (polygon_arr[0][0].getMap()) 
+    {
+      for(let i=0; i<polygon_arr[0].length;i++){
+        polygon_arr[0][i].setMap(null)
+      }
+
+      for(let i=0; i<polygon_arr[1].length;i++){
+        polygon_arr[1][i].setMap(map)
+      }
+    } else {
+      
+      for(let i=0; i<polygon_arr[0].length;i++){
+        polygon_arr[0][i].setMap(map);
+
+      }
+
+      for(let i=0; i<polygon_arr[1].length;i++){
+        polygon_arr[1][i].setMap(null)
+      }
+
+    }
+  }
+
 
 
 
