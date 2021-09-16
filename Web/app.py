@@ -38,7 +38,7 @@ def apply_corrections(df, values):
 
 # Get the uploaded files
 @app.route("/", methods=['GET', 'POST'])
-def upload_files():
+def index():
 
     # Default landing page
     if request.method == 'GET':
