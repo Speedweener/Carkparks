@@ -11,52 +11,53 @@ UPLOAD_FOLDER = 'static/files'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
+def apply_corrections(df, values):
+
+    missing_corrections = False
+
+    # If Tide Correction is selected
+    if request.form.getlist('tide-corr'):
+        if 'Tidal Correction' in df.columns:
+            tide_correction_list = df['Tidal Correction'].tolist()
+            for i in range(len(values)):
+                values[i] += tide_correction_list[i]
+        else:
+            missing_corrections = True
+
+    # If Gravity Correction is selected
+    if request.form.getlist('grav-corr'):
+        if 'Gravity Correction' in df.columns:
+            gravity_correction_list = df['Gravity Correction'].tolist()
+            for i in range(len(values)):
+                values[i] += gravity_correction_list[i]
+        else:
+            missing_corrections = True
+
+    return missing_corrections
+
+
 # Get the uploaded files
 @app.route("/", methods=['GET', 'POST'])
-def uploadFiles():
+def upload_files():
 
+    # Default landing page
     if request.method == 'GET':
         return render_template('index.html')
 
+    # Display map
     else:
         csv_file = request.files['file']
         df = pd.read_csv(csv_file)
         lat_list = df['Latitude(deg)'].tolist()
         long_list = df['Longitude(deg)'].tolist()
         values_list = df['Values'].tolist()
-        if 'Tidal Correction' in df.columns:
-            tide_correction_list = df['Tidal Correction'].tolist()
-        else:
-            tide_correction_list = None
 
-        polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_list, long_list, values_list, tide_correction_list)
-        return render_template('index.html', polygon_array=polygons, color_bar=c_bar, lat=lat, long=long)
+        missing_corrections = apply_corrections(df, values_list)
 
+        polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_list, long_list, values_list)
 
-
-
-
-
-# @app.route('/hello', methods=['GET', 'POST'])
-# def hello():
-#
-#     # POST request
-#     if request.method == 'POST':
-#         print('Incoming..')
-#         print(request.get_json())  # parse as JSON
-#         return 'OK', 200
-#
-#     # GET request
-#     else:
-#         print("Czechoslovakia")
-#         message = {'greeting':'Hello from Flask!'}
-#         return jsonify(message)  # serialize and use JSON headers
-#
-# @app.route('/test')
-# def test_page():
-#     # look inside `templates` and serve `index.html`
-#     return render_template('ajax.html')
-
+        return jsonify(polygon_values=polygons, color_bar_values=c_bar, lat=lat, long=long,
+                       missing_corrections=missing_corrections)
 
 
 if __name__ == '__main__':

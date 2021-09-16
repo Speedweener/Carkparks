@@ -260,6 +260,7 @@ def generate_values():
     longitude_sample = []
     values = []
     tidal_correction = []
+    gravity_correction = []
 
     for i in range(200):
         latitude_sample.append(random.uniform(1.315709, 1.318058))
@@ -272,7 +273,10 @@ def generate_values():
         values.append(function_2(longitude_sample[i], latitude_sample[i]))
 
     for i in range(len(latitude_sample)):
-        tidal_correction.append(random.uniform(1, -1))
+        tidal_correction.append(random.uniform(-1, 1))
+
+    for i in range(len(latitude_sample)):
+        gravity_correction.append(random.uniform(-0.05, 0.05))
 
 
     # df = pd.read_csv(r'sample_data.csv')
@@ -283,14 +287,12 @@ def generate_values():
     # df['Latitude(deg)'] = latitude_sample
     # df['Longitude(deg)'] = longitude_sample
     # df['Values'] = values
-    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values, tidal_correction)),
-                      columns=['Latitude(deg)', 'Longitude(deg)', 'Values', 'Tidal Correction'])
+    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values, tidal_correction, gravity_correction)),
+                      columns=['Latitude(deg)', 'Longitude(deg)', 'Values', 'Tidal Correction', 'Gravity Correction'])
 
-    df.to_csv('correction_data_1.csv')
+    df.to_csv('data_with_correction.csv')
 
-    df = pd.DataFrame(list(zip(latitude_sample, longitude_sample, values)),
-                      columns=['Latitude(deg)', 'Longitude(deg)', 'Values'])
-    df.to_csv('without_correction_data_1.csv')
+
     # return latitude_sample, longitude_sample, values
 
 
@@ -306,35 +308,52 @@ def get_correction_values(values, tidal_correction):
     return correction_array
 
 
-def gmap_output(lat_sample, long_sample, values, tidal_correction=None):
+def gmap_output(lat_sample, long_sample, values):
 
-    plots = []
-    color_bars = []
-    correction_array = get_correction_values(values, tidal_correction)
-    for i in range(2):
-        contour_map = interpolate(lat_sample, long_sample, correction_array[i], levels=15, points=100, method='cubic')
+    contour_map = interpolate(lat_sample, long_sample, values, levels=15, points=100, method='cubic')
+    # contour_map.allsegs contain all the polygons sorted into different weights.
+    # Each weight will have certain areas(polygons), and each area will have different
+    # coordinates
+    # Last weight in contour_map.levels is ignored (Outermost contour) as it is not plotted
 
-        # contour_map.allsegs contain all the polygons sorted into different weights.
-        # Each weight will have certain areas(polygons), and each area will have different
-        # coordinates
-        # Last weight in contour_map.levels is ignored (Outermost contour) as it is not plotted
+    polygons = []
+    color_bar = []
+    same_weight_polygons = []
+    for weight in range(len(contour_map.allsegs)):
+        color_bar.append(contour_map.levels[weight])
+        for area in range(len(contour_map.allsegs[weight])):
+            dat0 = contour_map.allsegs[weight][area]
+            same_weight_polygons.append(polygon_hole_split(dat0))
 
-        polygons = []
-        color_bar = []
-        same_weight_polygons = []
-        for weight in range(len(contour_map.allsegs)):
-            color_bar.append(contour_map.levels[weight])
-            for area in range(len(contour_map.allsegs[weight])):
-                dat0 = contour_map.allsegs[weight][area]
-                same_weight_polygons.append(polygon_hole_split(dat0))
+        polygons.append(same_weight_polygons.copy())
+        same_weight_polygons.clear()
 
-            polygons.append(same_weight_polygons.copy())
-            same_weight_polygons.clear()
+    return polygons, color_bar, mid_point(lat_sample), mid_point(long_sample)
 
-        plots.append(polygons)
-        color_bars.append(color_bar)
 
-    return plots, color_bars, mid_point(lat_sample), mid_point(long_sample)
+def apply_corrections(df, values):
+
+    tide_correction_list = df['Tidal Correction'].tolist()
+    for i in range(len(values)):
+        values[i] += tide_correction_list[i]
+
+
+    gravity_correction_list = df['Gravity Correction'].tolist()
+    for i in range(len(values)):
+        values[i] += gravity_correction_list[i]
+
+
+def read_csv():
+    file = open("data_with_correction.csv")
+
+    df = pd.read_csv(file)
+    lat_list = df['Latitude(deg)'].tolist()
+    long_list = df['Longitude(deg)'].tolist()
+    values_list = df['Values'].tolist()
+
+    apply_corrections(df, values_list)
+
+    gmap_output(lat_list, long_list, values_list)
 
 
 def step_draw():
@@ -458,4 +477,5 @@ def hole_plot():
 if __name__ == '__main__':
     # interpolation()
     # poly = gmap_output(generate_values())
-    generate_values()
+    read_csv()
+    # generate_values()
