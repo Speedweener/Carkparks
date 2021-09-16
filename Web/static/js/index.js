@@ -101,7 +101,6 @@ function checkMapUndefined() {
 }
 
 function clearMap() {
-
   for (let i = 0; i < plot.length; i++) {
     plot[i].setMap(null);
   }
