@@ -47,6 +47,39 @@ const colorCode = {
   // 14: "#2a4858",
   // 15: "#1d6172",
 
+
+  // 0: "#ff0000",
+  // 1: "#ff2200",
+  // 2: "#ff3400",
+  // 3: "#fe4100",
+  // 4: "#fd4d00",
+  // 5: "#fb5800",
+  // 6: "#f96100",
+  // 7: "#f66b00",
+  // 8: "#f37400",
+  // 9: "#f07c00",
+  // 10: "#ed8400",
+  // 11: "#e88c00",
+  // 12: "#e49400",
+  // 13: "#df9c00",
+  // 14: "#daa300",
+  // 15: "#d4aa00",
+  // 16: "#ceb100",
+  // 17: "#c8b800",
+  // 18: "#c1be00",
+  // 19: "#b9c500",
+  // 20: "#b1cb00",
+  // 21: "#a9d100",
+  // 22: "#9fd700",
+  // 23: "#95dd00",
+  // 24: "#8ae300",
+  // 25: "#7de900",
+  // 26: "#6eef00",
+  // 27: "#5cf400",
+  // 28: "#44fa00",
+  // 29: "#16ff00",
+
+
 }
 
 // GLOBALS
@@ -55,7 +88,6 @@ var plotByWeight = [];
 let map;
 
 function initializeMap(polygonValues, colorBarValues, lat, long) {
-
   map = new google.maps.Map(document.getElementById("map_canvas"), {
     mapTypeId: "satellite",
     zoom: 19,
@@ -66,6 +98,19 @@ function initializeMap(polygonValues, colorBarValues, lat, long) {
     //   style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
     //   mapTypeIds: ["roadmap", "terrain"],
     // },
+  });
+
+  let infoWindow = new google.maps.InfoWindow();
+
+  map.addListener("click", (mapsMouseEvent) => {
+    infoWindow.close();
+    infoWindow = new google.maps.InfoWindow({
+      position: mapsMouseEvent.latLng,
+    });
+    infoWindow.setContent(
+      JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
+    );
+    infoWindow.open(map);
   });
 
   document.getElementById("toggle_plot").addEventListener("click", togglePlot);
@@ -218,6 +263,25 @@ function toggleOutline() {
       plot[i].setOptions({ strokeOpacity: 0 });
     }
   }
+}
+
+
+// For checkbox to perform form submission
+function submitForm(){
+  if(document.getElementById('csv_file').files.length != 0){
+    document.getElementById('form_data').dispatchEvent(new Event('submit'));
+  }
+}
+
+
+function showCorrectionWarning(missingCorrections){
+  if(missingCorrections) {
+    document.getElementById('warning').hidden = false;
+  }
+  else {
+    document.getElementById('warning').hidden = true;
+  }
+
 }
 
 

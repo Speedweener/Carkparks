@@ -1,10 +1,9 @@
 import numpy as np
 from scipy.interpolate import griddata
 import matplotlib.pyplot as plt
-import matplotlib.colors as color
-import json
-import gmaps
 import math
+import pymap3d as pymap
+
 
 import gmplot
 import random
@@ -22,13 +21,6 @@ color_codes = {
     7: "#0c0c0c",  # BLACK
     8: "#ffffff",  # WHITE
 }
-
-
-def f(x, y):
-    s = np.hypot(x, y)
-    phi = np.arctan2(y, x)
-    tau = s + s * (1 - s) / 5 * np.sin(6 * phi)
-    return 5 * (1 - tau) + tau
 
 
 def interpolate(lat_sample, long_sample, values, points=100, levels=10, method='cubic'):
@@ -310,6 +302,9 @@ def get_correction_values(values, tidal_correction):
 
 def gmap_output(lat_sample, long_sample, values):
 
+    for i in range(len(values)):
+        values[i] += 9.81
+
     contour_map = interpolate(lat_sample, long_sample, values, levels=15, points=100, method='cubic')
     # contour_map.allsegs contain all the polygons sorted into different weights.
     # Each weight will have certain areas(polygons), and each area will have different
@@ -337,145 +332,50 @@ def apply_corrections(df, values):
     for i in range(len(values)):
         values[i] += tide_correction_list[i]
 
-
     gravity_correction_list = df['Gravity Correction'].tolist()
     for i in range(len(values)):
         values[i] += gravity_correction_list[i]
 
 
-def read_csv():
-    file = open("data_with_correction.csv")
-
+def ned_to_lat_long():
+    file = open("test.csv")  # Sept15Sept25
+    fig, axs = plt.subplots(2)
     df = pd.read_csv(file)
+    base_lat = 1.2847051057656997
+    base_long = 103.81167255142326
+    base_height = 38.76026908866317
     lat_list = df['Latitude(deg)'].tolist()
     long_list = df['Longitude(deg)'].tolist()
-    values_list = df['Values'].tolist()
+    height_list = df['Height(m)'].tolist()
+    # axs[0].plot(lat_list, long_list)
+    container = 0
 
-    apply_corrections(df, values_list)
-
-    gmap_output(lat_list, long_list, values_list)
-
-
-def step_draw():
-    gmap1 = gmplot.GoogleMapPlotter(1.2847,
-                                    103.8117, 21, map_type='satellite')
-
-    gmap1.max_intensity = 0.1
-    gmap1.point_radius = 1
-
-    latitude_sample = [1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999,
-                       1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852,
-                       1.2852999999999999, 1.2853999999999999, 1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848,
-                       1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999, 1.2854999999999999,
-                       1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999,
-                       1.2853999999999999, 1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285,
-                       1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999, 1.2854999999999999, 1.2855999999999999,
-                       1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999,
-                       1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852,
-                       1.2852999999999999, 1.2853999999999999, 1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848,
-                       1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999, 1.2854999999999999,
-                       1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285, 1.2851, 1.2852, 1.2852999999999999,
-                       1.2853999999999999, 1.2854999999999999, 1.2855999999999999, 1.2847, 1.2848, 1.2849, 1.285,
-                       1.2851, 1.2852, 1.2852999999999999, 1.2853999999999999, 1.2854999999999999, 1.2855999999999999]
-    longitude_sample = [103.8117, 103.8117, 103.8117, 103.8117, 103.8117, 103.8117, 103.8117, 103.8117, 103.8117,
-                        103.8117, 103.8118, 103.8118, 103.8118, 103.8118, 103.8118, 103.8118, 103.8118, 103.8118,
-                        103.8118, 103.8118, 103.81190000000001, 103.81190000000001, 103.81190000000001,
-                        103.81190000000001, 103.81190000000001, 103.81190000000001, 103.81190000000001,
-                        103.81190000000001, 103.81190000000001, 103.81190000000001, 103.812, 103.812, 103.812, 103.812,
-                        103.812, 103.812, 103.812, 103.812, 103.812, 103.812, 103.8121, 103.8121, 103.8121, 103.8121,
-                        103.8121, 103.8121, 103.8121, 103.8121, 103.8121, 103.8121, 103.8122, 103.8122, 103.8122,
-                        103.8122, 103.8122, 103.8122, 103.8122, 103.8122, 103.8122, 103.8122, 103.81230000000001,
-                        103.81230000000001, 103.81230000000001, 103.81230000000001, 103.81230000000001,
-                        103.81230000000001, 103.81230000000001, 103.81230000000001, 103.81230000000001,
-                        103.81230000000001, 103.8124, 103.8124, 103.8124, 103.8124, 103.8124, 103.8124, 103.8124,
-                        103.8124, 103.8124, 103.8124, 103.8125, 103.8125, 103.8125, 103.8125, 103.8125, 103.8125,
-                        103.8125, 103.8125, 103.8125, 103.8125, 103.8126, 103.8126, 103.8126, 103.8126, 103.8126,
-                        103.8126, 103.8126, 103.8126, 103.8126, 103.8126]
-    weight_sample = [9.80812889029008, 9.807984177661622, 9.806559495962446, 9.806956764963843, 9.805823442144325,
-                     9.809914022729686, 9.80968241927086, 9.80672916158248, 9.808537116524334, 9.805069858731638,
-                     9.805784042133165, 9.806311139820245, 9.807236568231412, 9.809005620435926, 9.80626061971379,
-                     9.808424087353403, 9.809656699105672, 9.806506584882046, 9.808049684149685, 9.807671207774785,
-                     9.805144011983813, 9.805483497359164, 9.806074906327101, 9.80829464675826, 9.807975987236965,
-                     9.809705068849658, 9.80834205496633, 9.808640235335215, 9.809396918983007, 9.806503433001225,
-                     9.809193703162727, 9.807470163149294, 9.809999574566886, 9.805474169740945, 9.807523611269701,
-                     9.80686658485638, 9.80940471235577, 9.808830288668737, 9.807113971699327, 9.80724329179546,
-                     9.807654317175295, 9.809161340412432, 9.806603892981242, 9.809241826925241, 9.80788718748318,
-                     9.808910223553442, 9.808122277493553, 9.80732953213465, 9.808331005597516, 9.808948210899445,
-                     9.807395952616844, 9.807170528777254, 9.806162320750824, 9.805205546720039, 9.80861429843123,
-                     9.806954772391748, 9.805677130980143, 9.806705827166198, 9.808470121763396, 9.807288828602529,
-                     9.805291531160268, 9.809783445139834, 9.80861418317851, 9.807751134159018, 9.80838182355061,
-                     9.806775661454601, 9.809104544968637, 9.807543824714326, 9.808795371888426, 9.809558052716389,
-                     9.806593501181663, 9.807280279227063, 9.805899238131529, 9.805982539772936, 9.806844625522363,
-                     9.808142697138528, 9.807030529843926, 9.805988053034163, 9.809004055286433, 9.807076188597893,
-                     9.80923544884448, 9.805490351012663, 9.80942019820369, 9.805159965612928, 9.809900781684062,
-                     9.80554187264365, 9.809269399287288, 9.80514722920465, 9.805769289865252, 9.807989537442362,
-                     9.808199588238333, 9.808074494072416, 9.809329506152901, 9.807640469959711, 9.806581612023928,
-                     9.80835945925168, 9.806678679376079, 9.80773218445338, 9.807810362838671, 9.808357954197117]
-    lat_space = np.linspace(min(latitude_sample), max(latitude_sample), 100)
-    long_space = np.linspace(min(longitude_sample), max(longitude_sample), 100)
-
-    X, Y = np.meshgrid(long_space, lat_space)
-
-    Ti = griddata((longitude_sample, latitude_sample), weight_sample, (X, Y), method='cubic')
-
-    plt.ylim([1.2850127465950092, 1.2855999999999999])
-    plt.xlim([103.8117, 103.8126])
-
-    contour_map = plt.contourf(X, Y, Ti)
-    dat0 = contour_map.allsegs[2][6]
-    lat = []
-    long = []
-    prev_long = dat0[0][0]
-    prev_lat = dat0[0][1]
-
-    print(len(dat0))
-
-    # [2][6]  [3][6] [7][5]
-
-    plt.clf()
-
-    plt.ylim([1.2850127465950092, 1.2855999999999999])
-    plt.xlim([103.8117, 103.8126])
-
-    lat = []
-    long = []
-    prev_long = dat0[0][0]
-    prev_lat = dat0[0][1]
-
-    for numbers in range(7):
-        for j in range(10):
-            long.append(dat0[numbers * 10 + j][0])
-            lat.append(dat0[numbers * 10 + j][1])
-
-    gmap1.polygon(lat, long,
-                  color=color_codes[1])
-    gmap1.draw("C:\\Users\\kwekz\\Desktop\\test2.html")
+    north_list = df['North(mm)'].tolist()
+    east_list = df['East(mm)'].tolist()
+    down_list = df['Down(mm)'].tolist()
 
 
-def hole_plot():
-    import gmplot
-    apikey = ''  # (your API key here)
-    gmap = gmplot.GoogleMapPlotter(24.886, -70.268, 5, apikey=apikey)
+    axs[0].plot(north_list, east_list)
 
-    golden_gate_park = [
-        (25.774, -80.19),
-        (18.466, -66.118),
-        (32.321, -64.757),
-    ]
+    # values_list = df['Values'].tolist()
 
-    innerCoords = [
-        (28.745, -70.579),
-        (29.57, -67.514),
-        (27.339, -66.668),
-    ]
-    results = zip(golden_gate_park, innerCoords)
-    print(list(results))
-    gmap.polygon([golden_gate_park, innerCoords], face_color='pink', edge_color='cornflowerblue', edge_width=5)
-    gmap.draw("C:\\Users\\kwekz\\Desktop\\test2.html")
 
+
+    for i in range(len(lat_list)):
+        lat_list[i], long_list[i], height_list = pymap.ned.ned2geodetic(north_list[i], east_list[i], down_list[i], base_lat, base_long, base_height)
+
+    # apply_corrections(df, values_list)
+
+    # contour_map = interpolate(lat_list, long_list, values_list, levels=15, points=100, method='cubic')
+    # plt.plot(lat_list, long_list)
+
+    axs[1].plot(lat_list, long_list)
+
+
+    plt.show()
 
 if __name__ == '__main__':
     # interpolation()
     # poly = gmap_output(generate_values())
-    read_csv()
-    # generate_values()
+    # ned_to_lat_long()
+    generate_values()
