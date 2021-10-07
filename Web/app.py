@@ -54,10 +54,10 @@ def index():
 
         missing_corrections = apply_corrections(df, values_list)
 
-        polygons, c_bar, lat, long = gravity_plot.gmap_output(lat_list, long_list, values_list)
+        polygons, c_bar, lat, long, sample_points = gravity_plot.gmap_output(lat_list, long_list, values_list)
 
         return jsonify(polygon_values=polygons, color_bar_values=c_bar, lat=lat, long=long,
-                       missing_corrections=missing_corrections)
+                       sample_points=sample_points, missing_corrections=missing_corrections)
 
 
 if __name__ == '__main__':

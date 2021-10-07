@@ -8,6 +8,8 @@
   
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
   <script src="{{ url_for('static', filename='js/index.js') }}" type="text/javascript"></script>
+  <script src="https://unpkg.com/measuretool-googlemaps-v3"></script>
+
 </head>
 
 <body style="margin:0px; padding:0px;">
@@ -50,8 +52,22 @@
 
           <div class="form-group">
             <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="toggle_points">
+              <label class="form-check-label" for="toggle_points">Show sample points</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="toggle_fix">
-              <label class="form-check-label" for="toggle-lines">Fix Position</label>
+              <label class="form-check-label" for="toggle_fix">Fix Position</label>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="toggle_measure_overlay">
+              <label class="form-check-label" for="toggle_measure_overlay">Measure Distance</label>
             </div>
           </div>
 
@@ -95,15 +111,21 @@
           showCorrectionWarning(json.missing_corrections);
 
           if (checkMapUndefined()) {
-            initializeMap(json.polygon_values, json.color_bar_values, json.lat, json.long);
+            initializeMap(json.polygon_values, json.color_bar_values, json.lat, json.long, json.sample_points);
           } else {
-            updateMap(json.polygon_values, json.color_bar_values, json.lat, json.long);
+            updateMap(json.polygon_values, json.color_bar_values, json.lat, json.long, json.sample_points);
 
           }
         })
     });
   </script>
-  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?libraries=visualization"></script>
+
+<div style="display:none">
+
+  <img src="{{ url_for('static', filename='images/circle.png') }}" id="circle_marker">
+</div>
+
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?&libraries=visualization,geometry"></script>
 </body>
 
 </html>
