@@ -84,10 +84,21 @@ const colorCode = {
 
 // GLOBALS
 var plot = [];
-var plotByWeight = [];
-let map;
+var samplePoints = [];
 
-function initializeMap(polygonValues, colorBarValues, lat, long) {
+var plotByWeight = [];
+
+var startPoint;
+let map;
+let measureTool;
+
+// REMOVE GLOBALS USING CLOSURE
+
+
+
+function initializeMap(polygonValues, colorBarValues, lat, long, sample_points) {
+
+
   map = new google.maps.Map(document.getElementById("map_canvas"), {
     mapTypeId: "satellite",
     zoom: 19,
@@ -100,22 +111,43 @@ function initializeMap(polygonValues, colorBarValues, lat, long) {
     // },
   });
 
+  /*
+  Measure tool overlay from MeasureTool-GoogleMaps-V3 by zhengyanghua
+  */
+
+  measureTool = new MeasureTool(map); 
+
+
+
+
   let infoWindow = new google.maps.InfoWindow();
 
   map.addListener("click", (mapsMouseEvent) => {
+
     infoWindow.close();
+    
     infoWindow = new google.maps.InfoWindow({
       position: mapsMouseEvent.latLng,
     });
+
     infoWindow.setContent(
-      JSON.stringify(mapsMouseEvent.latLng.toJSON(), null, 2)
+      "<p>" +
+      "<b>Lat</b>: " + mapsMouseEvent.latLng.lat() + "<br />" +
+      "<b>Long</b>: " + mapsMouseEvent.latLng.lng() +
+      "</p>"
     );
+
+
     infoWindow.open(map);
   });
 
   document.getElementById("toggle_plot").addEventListener("click", togglePlot);
 
   document.getElementById("toggle_lines").addEventListener("click", toggleOutline);
+  
+  document.getElementById("toggle_points").addEventListener("click", togglePoints);
+  document.getElementById("toggle_measure_overlay").addEventListener("click", toggleMeasurementOverlay);
+
 
   var slider = document.getElementById("range_slider");
   // Update the current slider value (each time you drag the slider handle)
@@ -139,22 +171,18 @@ function initializeMap(polygonValues, colorBarValues, lat, long) {
     plotByWeight.push(polygonIndexes);
     polygonIndexes = [];
   }
-}
 
-function checkMapUndefined() {
-  return map === undefined;
-}
+  plotSamplePoints(sample_points);
 
-function clearMap() {
-  for (let i = 0; i < plot.length; i++) {
-    plot[i].setMap(null);
-  }
-  plot = [];
-  plotByWeight = [];
+
+
+  
 }
 
 
-function updateMap(polygonValues, colorBarValues, lat, long) {
+
+
+function updateMap(polygonValues, colorBarValues, lat, long, sample_points) {
   clearMap();
 
   if (!document.getElementById("toggle_fix").checked) {
@@ -176,7 +204,30 @@ function updateMap(polygonValues, colorBarValues, lat, long) {
     plotByWeight.push(polygonIndexes);
     polygonIndexes = [];
   }
+
+  plotSamplePoints(sample_points);
+
 }
+
+function checkMapUndefined() {
+  return map === undefined;
+}
+
+function clearMap() {
+  for (let i = 0; i < plot.length; i++) {
+    plot[i].setMap(null);
+  }
+
+  for (let i = 0; i < samplePoints.length; i++) {
+    samplePoints[i].setMap(null);
+  }
+
+  plot = [];
+  plotByWeight = [];
+  samplePoints = [];
+}
+
+
 
 
 
@@ -206,6 +257,31 @@ function plotPolygon(polygonPath, weight) {
   }));
 }
 
+function plotSamplePoints(sample_points) {
+
+  const circle_marker = document.getElementById("circle_marker").src;
+
+  set_map = document.getElementById('toggle_points').checked ? map : null; // Decide whether to display markers based on checkbox
+
+  var icon = {
+    url: circle_marker,
+    // scaledSize: new google.maps.Size(5, 5), Image is already 5x5 pixels wide
+    anchor: new google.maps.Point(2.5, 2.5),
+  };
+
+  for(let i=0; i<sample_points.length; i++) {
+    samplePoints.push( new google.maps.Marker({
+      position : new google.maps.LatLng(sample_points[i][0], sample_points[i][1]),
+      map: set_map,
+      optimized: true ,
+      icon: icon,
+
+      // PNG preferred when there are large number of sample points to be plotted. 
+
+    }));
+  }
+}
+
 function createColorBar(colorBarValues) {
   const colorBar = document.getElementById("color_bar");
 
@@ -217,7 +293,7 @@ function createColorBar(colorBarValues) {
 
   for (let i = 0; i < colorBarValues.length; i++) {
     var div = document.createElement('div');
-    div.innerHTML = colorBarValues[i];
+    div.innerHTML = colorBarValues[i].toFixed(5);
     div.style.color = "#000000";
 
     div.style.backgroundColor = colorCode[i % 30];
@@ -264,6 +340,28 @@ function toggleOutline() {
     }
   }
 }
+
+function togglePoints() {
+  if (document.getElementById('toggle_points').checked) {
+    for (let i = 0; i < samplePoints.length; i++) {
+      samplePoints[i].setMap(map);
+    }
+
+  } else {
+    for (let i = 0; i < samplePoints.length; i++) {
+      samplePoints[i].setMap(null);
+    }
+  }
+}
+
+function toggleMeasurementOverlay() {
+  if (document.getElementById('toggle_measure_overlay').checked) {
+    measureTool.start();
+  } else {
+    measureTool.end();
+  }
+}
+
 
 
 // For checkbox to perform form submission
