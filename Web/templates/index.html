@@ -1,11 +1,12 @@
 <html>
+
 <head>
   <title>Google Maps - Gravity Plot</title>
 
   <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
-  
+
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/style.css') }}" />
   <script src="{{ url_for('static', filename='js/index.js') }}" type="text/javascript"></script>
   <script src="https://unpkg.com/measuretool-googlemaps-v3"></script>
@@ -18,68 +19,18 @@
     <div class="row" style="width: 100%; height: 80%;">
       <div class="col-md-3 ">
         <div>
-          <label>Upload your CSV file</label>
+          <label>Choose a date</label>
           <form method="POST" action="" enctype="multipart/form-data" id="form_data">
-            <p><input type="file" name="file" id = "csv_file" accept=".csv" required> </p>
-            
+            <p> <label>Date:</label>
+              <input type="date" id="date" name="date" value="2022-10-29">
 
-            <ul class="no-bullets">
-              <li> <label> <input type="checkbox" name="tide-corr" onChange="submitForm()"> Tide Correction </label>  </li>
-              <li> <label> <input type="checkbox" name="grav-corr" onChange="submitForm()"> Grav Correction </label>  </li>
-              <li> <span class="badge rounded-pill bg-warning text-dark" id="warning" hidden>Missing CSV corrections!</span>  </li>
-
-            </ul>
+            </p>
             <p><input type="submit" value="Submit"></p>
           </form>
         </div>
 
 
         <form>
-          <div class="form-group">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggle_plot" checked>
-              <label class="form-check-label" for="toggle-plot">Show plot</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggle_lines" checked>
-              <label class="form-check-label" for="toggle-lines">Show lines</label>
-              
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggle_points">
-              <label class="form-check-label" for="toggle_points">Show sample points</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggle_fix">
-              <label class="form-check-label" for="toggle_fix">Fix Position</label>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="toggle_measure_overlay">
-              <label class="form-check-label" for="toggle_measure_overlay">Measure Distance</label>
-            </div>
-          </div>
-
-
-          <div class="form-group">
-            <label for="opacityslider" class="col-sm-1 col-form-label">Opacity</label>
-            <div class="col-sm-11">
-              <div class="slidecontainer">
-                <input type="range" min="0" max="1" value="0.8" class="slider" id="range_slider" step="0.01">
-              </div>
-            </div>
-          </div>
         </form>
       </div>
 
@@ -89,7 +40,7 @@
       </div>
 
       <div class="col-md-3">
-        <div class="w3-bar-block w3-white" id="color_bar">
+        <div class="w3-bar-block w3-white" style="height: 10px" id="color_bar">
         </div>
       </div>
 
@@ -97,35 +48,36 @@
   </div>
 
   <script>
+    document.getElementById("date").valueAsDate = new Date();
     document.getElementById("form_data").addEventListener("submit", function (event) {
       event.preventDefault(); // prevent page from refreshing
       const formData = new FormData(document.getElementById("form_data")); // grab the data inside the form fields
       fetch('/', { // assuming the backend is hosted on the same server
-          method: 'POST',
-          body: formData,
-        }).then(function (response) {
-          return response.json();;
-        })
+        method: 'POST',
+        body: formData,
+      }).then(function (response) {
+        return response.json();;
+      })
         .then(function (json) {
 
-          showCorrectionWarning(json.missing_corrections);
-
           if (checkMapUndefined()) {
-            initializeMap(json.polygon_values, json.color_bar_values, json.lat, json.long, json.sample_points);
+            initializeMap(json.color_bar_values, json.predicted_values);
           } else {
-            updateMap(json.polygon_values, json.color_bar_values, json.lat, json.long, json.sample_points);
+            updateMap(json.color_bar_values, json.predicted_values);
 
           }
         })
     });
   </script>
 
-<div style="display:none">
+  <div style="display:none">
 
-  <img src="{{ url_for('static', filename='images/circle.png') }}" id="circle_marker">
-</div>
+    <img src="{{ url_for('static', filename='images/circle.png') }}" id="circle_marker">
+  </div>
 
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?&libraries=visualization,geometry"></script>
+
+  <script type="text/javascript"
+  src="https://maps.googleapis.com/maps/api/js?&libraries=visualization,geometry"></script>
 </body>
 
 </html>

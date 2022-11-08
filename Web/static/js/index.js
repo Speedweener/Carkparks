@@ -30,94 +30,62 @@ const colorCode = {
   28: "#405966",
   29: "#42535d",
 
-  // 0: "#fafa6e",
-  // 1: "#d7f171",
-  // 2: "#b5e877",
-  // 3: "#95dd7d",
-  // 4: "#77d183",
-  // 5: "#5bc489",
-  // 6: "#3fb78d",
-  // 7: "#23aa8f",
-  // 8: "#009c8f",
-  // 9: "#008d8c",
-  // 10: "#007f86",
-  // 11: "#0b717e",
-  // 12: "#1c6373",
-  // 13: "#255566",
-  // 14: "#2a4858",
-  // 15: "#1d6172",
-
-
-  // 0: "#ff0000",
-  // 1: "#ff2200",
-  // 2: "#ff3400",
-  // 3: "#fe4100",
-  // 4: "#fd4d00",
-  // 5: "#fb5800",
-  // 6: "#f96100",
-  // 7: "#f66b00",
-  // 8: "#f37400",
-  // 9: "#f07c00",
-  // 10: "#ed8400",
-  // 11: "#e88c00",
-  // 12: "#e49400",
-  // 13: "#df9c00",
-  // 14: "#daa300",
-  // 15: "#d4aa00",
-  // 16: "#ceb100",
-  // 17: "#c8b800",
-  // 18: "#c1be00",
-  // 19: "#b9c500",
-  // 20: "#b1cb00",
-  // 21: "#a9d100",
-  // 22: "#9fd700",
-  // 23: "#95dd00",
-  // 24: "#8ae300",
-  // 25: "#7de900",
-  // 26: "#6eef00",
-  // 27: "#5cf400",
-  // 28: "#44fa00",
-  // 29: "#16ff00",
-
-
 }
+
+
+const fillColours = {
+  2: "#ff0000",
+  1: "#D81515",
+  0: "#A01717", 
+  3: "#26F107",
+  4: "#32D319",
+  5: "#2AA017",
+}
+
 
 // GLOBALS
 var plot = [];
-var samplePoints = [];
 
-var plotByWeight = [];
-
-var startPoint;
 let map;
-let measureTool;
+const circles = [[0, 1.448589660573756, 103.82115670293068],
+[1, 1.363142385867216, 103.89226406553928],
+[2, 1.3827982265943584, 103.7672235415534],
+[3, 1.2855097099078496, 103.81119850873618],
+[4, 1.385717992827047, 103.74561764224984],
+[5, 1.3519701721108013, 103.95333322076216],
+[6, 1.2822935795524406, 103.83065321951237],
+[7, 1.3864684913608887, 103.88461760624985],
+[8, 1.3365859188533349, 103.85320441757544],
+[9, 1.3171685778764957, 103.76025042272727],
+[10, 1.3722695248835357, 103.9535980234044],
+[11, 1.313627700939746, 103.85880399409666],
+[12, 1.3433085287709694, 103.70837268236983],
+[13, 1.4256079021333752, 103.83922481281905],
+[14, 1.304923504115193, 103.79580902691832],
+[15, 1.3195681661444114, 103.88265827177516],
+[16, 1.3676153904566077, 103.8448288497331],
+[17, 1.3290026380847866, 103.93114624442494],
+[18, 1.3630701941356094, 103.87269087335741],
+[19, 1.3485372874333466, 103.7445921244842],
+[20, 1.3171594201156653, 103.90727806393146],
+[21, 1.393175796309999, 103.90699315484736],
+[22, 1.3540211230519217, 103.93565459382386],
+[23, 1.4380416142220613, 103.79031978467165],
+[24, 1.4041145183619266, 103.9009029615997]
+]
+// 0.009 = 1km
 
-// REMOVE GLOBALS USING CLOSURE
 
 
-
-function initializeMap(polygonValues, colorBarValues, lat, long, sample_points) {
-
+function initializeMap(colorBarValues, predictedValues) {
 
   map = new google.maps.Map(document.getElementById("map_canvas"), {
+
     mapTypeId: "satellite",
-    zoom: 19,
-    center: new google.maps.LatLng(lat, long),
+    zoom: 12,
+    center: new google.maps.LatLng(1.3416894022651873, 103.82354635457985),
 
-    // mapTypeControl: true,
-    // mapTypeControlOptions: {
-    //   style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-    //   mapTypeIds: ["roadmap", "terrain"],
-    // },
   });
-
-  /*
-  Measure tool overlay from MeasureTool-GoogleMaps-V3 by zhengyanghua
-  */
-
-  measureTool = new MeasureTool(map); 
-
-
 
 
   let infoWindow = new google.maps.InfoWindow();
@@ -137,43 +105,14 @@ function initializeMap(polygonValues, colorBarValues, lat, long, sample_points) 
       "</p>"
     );
 
-
     infoWindow.open(map);
   });
 
-  document.getElementById("toggle_plot").addEventListener("click", togglePlot);
 
-  document.getElementById("toggle_lines").addEventListener("click", toggleOutline);
-  
-  document.getElementById("toggle_points").addEventListener("click", togglePoints);
-  document.getElementById("toggle_measure_overlay").addEventListener("click", toggleMeasurementOverlay);
-
-
-  var slider = document.getElementById("range_slider");
-  // Update the current slider value (each time you drag the slider handle)
-  slider.oninput = function () {
-    for (let i = 0; i < plot.length; i++) {
-      plot[i].setOptions({ fillOpacity: parseFloat(this.value) });
-    }
+  for (let x in circles) {
+    plotCircle(circles[x][1], circles[x][2]);
   }
-
-  createColorBar(colorBarValues);
-
-  var polygonIndexes = [];
-  var sum = 0;
-
-  for (let weight = 0; weight < polygonValues.length; weight++) {
-    for (let area = 0; area < polygonValues[weight].length; area++) {
-      polygonIndexes.push(sum + area)
-      plotPolygon(toLatLong(polygonValues[weight][area]), weight);
-    }
-    sum += polygonValues[weight].length;
-    plotByWeight.push(polygonIndexes);
-    polygonIndexes = [];
-  }
-
-  plotSamplePoints(sample_points);
-
+  createColorBar(colorBarValues, predictedValues);
 
 
   
@@ -182,30 +121,13 @@ function initializeMap(polygonValues, colorBarValues, lat, long, sample_points) 
 
 
 
-function updateMap(polygonValues, colorBarValues, lat, long, sample_points) {
+function updateMap(colorBarValues, predictedValues) {
   clearMap();
 
-  if (!document.getElementById("toggle_fix").checked) {
-    map.setCenter(new google.maps.LatLng(lat, long));
+  for (let x in circles) {
+    plotCircle(circles[x][1], circles[x][2]);
   }
-
-
-  createColorBar(colorBarValues);
-
-  var polygonIndexes = [];
-  var sum = 0;
-
-  for (let weight = 0; weight < polygonValues.length; weight++) {
-    for (let area = 0; area < polygonValues[weight].length; area++) {
-      polygonIndexes.push(sum + area)
-      plotPolygon(toLatLong(polygonValues[weight][area]), weight);
-    }
-    sum += polygonValues[weight].length;
-    plotByWeight.push(polygonIndexes);
-    polygonIndexes = [];
-  }
-
-  plotSamplePoints(sample_points);
+  createColorBar(colorBarValues, predictedValues);
 
 }
 
@@ -218,13 +140,7 @@ function clearMap() {
     plot[i].setMap(null);
   }
 
-  for (let i = 0; i < samplePoints.length; i++) {
-    samplePoints[i].setMap(null);
-  }
-
   plot = [];
-  plotByWeight = [];
-  samplePoints = [];
 }
 
 
@@ -242,47 +158,22 @@ function toLatLong(polygonValues) {
 }
 
 
-// Plots polygons with color matching its weight. "polygon_path" can consists of several list, corresponding to the holes of the polygon
-function plotPolygon(polygonPath, weight) {
-  plot.push(new google.maps.Polygon({
-    clickable: false,
-    geodesic: true,
-    fillColor: colorCode[weight % 30],
-    fillOpacity: document.getElementById("range_slider").value,
-    strokeColor: colorCode[weight % 30],
-    strokeOpacity: 1.000000,
-    strokeWeight: 1,
+function plotCircle(lat, long) {
+  plot.push(new google.maps.Circle({
+    strokeColor: "#FF0000",
+    strokeOpacity: 0.8,
+    strokeWeight: 2,
+    fillColor: "#FF0000",
+    fillOpacity: 0.5,
     map: map,
-    paths: polygonPath,
+    center: new google.maps.LatLng(lat, long) ,
+    radius: 0,
+
   }));
 }
 
-function plotSamplePoints(sample_points) {
 
-  const circle_marker = document.getElementById("circle_marker").src;
-
-  set_map = document.getElementById('toggle_points').checked ? map : null; // Decide whether to display markers based on checkbox
-
-  var icon = {
-    url: circle_marker,
-    // scaledSize: new google.maps.Size(5, 5), Image is already 5x5 pixels wide
-    anchor: new google.maps.Point(2.5, 2.5),
-  };
-
-  for(let i=0; i<sample_points.length; i++) {
-    samplePoints.push( new google.maps.Marker({
-      position : new google.maps.LatLng(sample_points[i][0], sample_points[i][1]),
-      map: set_map,
-      optimized: true ,
-      icon: icon,
-
-      // PNG preferred when there are large number of sample points to be plotted. 
-
-    }));
-  }
-}
-
-function createColorBar(colorBarValues) {
+function createColorBar(colorBarValues, predictedValues) {
   const colorBar = document.getElementById("color_bar");
 
   // Clear previous colour bar if any
@@ -293,94 +184,33 @@ function createColorBar(colorBarValues) {
 
   for (let i = 0; i < colorBarValues.length; i++) {
     var div = document.createElement('div');
-    div.innerHTML = colorBarValues[i].toFixed(5);
+    div.innerHTML = colorBarValues[i];
     div.style.color = "#000000";
 
     div.style.backgroundColor = colorCode[i % 30];
+    div.style.height = "3px";
     div.className = "w3-bar-item w3-hover-red";
     div.addEventListener('mouseenter', e => {
-      for (let j = 0; j < plotByWeight[i].length; j++) {
-        plot[plotByWeight[i][j]].setOptions({ fillColor: "#000000" });
+      
+      for (let j = 0; j < plot.length; j++) {
+        plot[j].setOptions({ radius: predictedValues[i][j]});
+        plot[j].setOptions({ fillColor: 
+          fillColours[(predictedValues[i][j] >700)? 2 : (predictedValues[i][j] >350) ? 1 : (predictedValues[i][j] >0) ? 0:
+          (predictedValues[i][j] < -700)? 3 : (predictedValues[i][j] < -350) ? 4 : 5] });
+        plot[j].setOptions({ strokeColor: 
+          fillColours[(predictedValues[i][j] >700)? 2 : (predictedValues[i][j] >350) ? 1 : (predictedValues[i][j] >0) ? 0:
+          (predictedValues[i][j] < -700)? 3 : (predictedValues[i][j] < -350) ? 4 : 5] });
+
+          // console.log(predictedValues[i][j]);
       }
     });
-
-    div.addEventListener('mouseleave', e => {
-      for (let j = 0; j < plotByWeight[i].length; j++) {
-        plot[plotByWeight[i][j]].setOptions({ fillColor: colorCode[i] });
-      }
-    });
-
-
     colorBar.appendChild(div)
 
   }
 }
 
-function togglePlot() {
-  if (plot[0].getVisible()) {
-    for (let i = 0; i < plot.length; i++) {
-      plot[i].setVisible(false);
-    }
-  } else {
-    for (let i = 0; i < plot.length; i++) {
-      plot[i].setVisible(true);
-    }
-  }
-}
-
-function toggleOutline() {
-  if (document.getElementById('toggle_lines').checked) {
-    for (let i = 0; i < plot.length; i++) {
-      plot[i].setOptions({ strokeOpacity: 1 });
-    }
-
-  } else {
-    for (let i = 0; i < plot.length; i++) {
-      plot[i].setOptions({ strokeOpacity: 0 });
-    }
-  }
-}
-
-function togglePoints() {
-  if (document.getElementById('toggle_points').checked) {
-    for (let i = 0; i < samplePoints.length; i++) {
-      samplePoints[i].setMap(map);
-    }
-
-  } else {
-    for (let i = 0; i < samplePoints.length; i++) {
-      samplePoints[i].setMap(null);
-    }
-  }
-}
-
-function toggleMeasurementOverlay() {
-  if (document.getElementById('toggle_measure_overlay').checked) {
-    measureTool.start();
-  } else {
-    measureTool.end();
-  }
-}
 
 
-
-// For checkbox to perform form submission
-function submitForm(){
-  if(document.getElementById('csv_file').files.length != 0){
-    document.getElementById('form_data').dispatchEvent(new Event('submit'));
-  }
-}
-
-
-function showCorrectionWarning(missingCorrections){
-  if(missingCorrections) {
-    document.getElementById('warning').hidden = false;
-  }
-  else {
-    document.getElementById('warning').hidden = true;
-  }
-
-}
 
 
 

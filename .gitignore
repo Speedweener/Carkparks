@@ -1,1 +1,5 @@
 /sample_csv/
+venv
+.idea
+__pycache__
+/Web/__pycache__/
