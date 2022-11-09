@@ -1,0 +1,43 @@
+/* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+       #map {
+        height: 100%;
+      }
+      
+      /* Optional: Makes the sample page fill the window. */
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
+      ul.no-bullets {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+      }
+      
+
+
+
+      .slidecontainer {
+        width: 20%; /* Width of the outside container */
+      }
+           
+      /* Mouse-over effects */
+      .slider:hover {
+        opacity: 1; /* Fully shown on mouse-over */
+      }
+      
+      .w3-bar.w3-black{
+        width:120px;
+      }
+
+
+      #warning {
+        margin-bottom: 20;
+
+
+
+      }
