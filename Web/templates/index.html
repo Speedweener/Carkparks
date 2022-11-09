@@ -23,7 +23,11 @@
           <form method="POST" action="" enctype="multipart/form-data" id="form_data">
             <p> <label>Date:</label>
               <input type="date" id="date" name="date" value="2022-10-29">
-
+              <label for="model">Choose a model:</label>
+              <select id="model" name="model">
+                <option value="nn">Neural Network</option>
+                <option value="dt">Decision Tree</option>
+              </select>
             </p>
             <p><input type="submit" value="Submit"></p>
           </form>

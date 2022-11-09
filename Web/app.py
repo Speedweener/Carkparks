@@ -4,6 +4,9 @@ import datetime
 import math
 import pandas as pd
 import pickle
+import tensorflow as tf
+
+
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 app = Flask(__name__)
@@ -11,7 +14,9 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'static/files'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+nnModel = tf.keras.models.load_model('nn-all-c-ph-solved.h5') 
 dtModel = pickle.load(open('dt.sav', 'rb'))
+
 time_list = []
 for hour in range(24):
     for minute in range(3):
@@ -42,13 +47,24 @@ def index():
     # Display map
     else:
         date = request.form.get('date')
+        model = request.form.get('model')
+
+        nn = not (model == "dt")
+
+        print(model, nn)
+
+        if not nn:
+            MLmodel = dtModel
+        else:
+            MLmodel = nnModel
+
 
         date_split = date.split("-")
         new_date = datetime.datetime(int(date_split[0]), int(date_split[1]), int(date_split[2]))
-        day_week_holiday = [new_date.weekday(), math.floor(int(date_split[2]) / 7)]  # Day, Week
+        day_week_holiday = [new_date.weekday()] + ([] if nn else [math.floor(int(date_split[2]) / 7)])   # Day, Week
 
         next_date = new_date + datetime.timedelta(days=1)
-        next_date_day_week_holiday = [next_date.weekday(), math.floor(int(next_date.day) / 7)]  # Day, Week
+        next_date_day_week_holiday = [next_date.weekday()] + ([] if nn else [math.floor(int(next_date.day) / 7)])  # Day, Week
         next_date_string = str(next_date.year) + '-' + str(next_date.month) + '-' + str(next_date.day)
 
         ph_2022 = pd.read_csv('holidays.csv')
@@ -64,29 +80,46 @@ def index():
             next_date_day_week_holiday.append(0)
 
         prediction_total = []
-        # cluster	min	hour	day	week	holiday
+        X_vals = np.ndarray((0,5)) if nn else np.ndarray((0,6))
+
         for i in range(len(time_list)):
-            prediction_all_clusters = []
+            # DT: cluster min hour day week holiday
+            # NN: x_hours x_days x_mins cluster is_ph 
             for cluster in range(25):
-                prediction_all_clusters.append(int(dtModel.predict(np.array(
-                    [cluster] + time_list[i] + day_week_holiday).reshape(1, -1))))
+                if nn:
+                    test = np.array([time_list[i][1]] + day_week_holiday[:-1] + [time_list[i][0]] + [cluster] + [day_week_holiday[-1]]).reshape(1, -1)
+                else:
+                    test = np.array([cluster] + time_list[i] + day_week_holiday).reshape(1,-1)
+    
+                X_vals = np.vstack([X_vals, test[0]])
 
-            prediction_total.append(prediction_all_clusters)
+        for i in range(len(time_list)):
+            for cluster in range(25):
+                if nn:
+                    test = np.array([time_list[i][1]] + next_date_day_week_holiday[:-1] + [time_list[i][0]] + [cluster] + [next_date_day_week_holiday[-1]]).reshape(1, -1)
+                else:
+                    test = np.array([cluster] + time_list[i] + next_date_day_week_holiday).reshape(1,-1)
 
-        next_day_predictions = []
-        for cluster in range(25):
-            next_day_predictions.append(int(dtModel.predict(np.array(
-                    [cluster] + [0, 0] + next_date_day_week_holiday).reshape(1, -1))))  # 12am next day
+                X_vals= np.vstack([X_vals, test[0]])
+        
+        print(X_vals.shape)
+        print(X_vals[:50])
+        predictions = MLmodel.predict(X_vals).ravel()
+        print(predictions.shape)
+
+        prediction_total = np.array(predictions).reshape(-1, 25)
+        print(prediction_total.shape)
+        prediction_total = prediction_total.tolist()
 
         # Future - Current
         for i in range(len(time_list)):
-            if i == len(time_list) - 1:  # Account for last time of the day, minus the next day 12am
-                for cluster in range(25):
-                    prediction_total[i][cluster] = next_day_predictions[cluster] - prediction_total[i][cluster]
+            # if i == len(time_list) - 1:  # Account for last time of the day, minus the next day 12am
+            #     for cluster in range(25):
+            #         prediction_total[i][cluster] = next_day_predictions[cluster] - prediction_total[i][cluster]
 
-            else:
-                for cluster in range(25):
-                    prediction_total[i][cluster] = prediction_total[i+1][cluster] - prediction_total[i][cluster]
+            # else:
+            for cluster in range(25):
+                prediction_total[i][cluster] = prediction_total[i+1][cluster] - prediction_total[i][cluster]
 
         return jsonify(color_bar_values=get_colour_bar(), predicted_values=prediction_total)
     # Values are sent in [hour:minute][cluster]
