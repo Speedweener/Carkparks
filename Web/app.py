@@ -14,7 +14,7 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'static/files'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-nnModel = tf.keras.models.load_model('nn-all-c-ph-solved.h5') 
+nnModel = tf.keras.models.load_model('nn-all-c-ph-solved.h5')
 dtModel = pickle.load(open('dt.sav', 'rb'))
 
 time_list = []
@@ -33,7 +33,6 @@ def get_colour_bar():
         for i in minutes:
             colour_bar_values.append(j + ":" + i)
     return colour_bar_values
-
 
 
 # Get the uploaded files
@@ -58,14 +57,17 @@ def index():
         else:
             MLmodel = nnModel
 
-
         date_split = date.split("-")
-        new_date = datetime.datetime(int(date_split[0]), int(date_split[1]), int(date_split[2]))
-        day_week_holiday = [new_date.weekday()] + ([] if nn else [math.floor(int(date_split[2]) / 7)])   # Day, Week
+        new_date = datetime.datetime(
+            int(date_split[0]), int(date_split[1]), int(date_split[2]))
+        day_week_holiday = [new_date.weekday(
+        )] + ([] if nn else [math.floor(int(date_split[2]) / 7)])   # Day, Week
 
         next_date = new_date + datetime.timedelta(days=1)
-        next_date_day_week_holiday = [next_date.weekday()] + ([] if nn else [math.floor(int(next_date.day) / 7)])  # Day, Week
-        next_date_string = str(next_date.year) + '-' + str(next_date.month) + '-' + str(next_date.day)
+        next_date_day_week_holiday = [next_date.weekday(
+        )] + ([] if nn else [math.floor(int(next_date.day) / 7)])  # Day, Week
+        next_date_string = str(next_date.year) + '-' + \
+            str(next_date.month) + '-' + str(next_date.day)
 
         ph_2022 = pd.read_csv('holidays.csv')
 
@@ -80,28 +82,32 @@ def index():
             next_date_day_week_holiday.append(0)
 
         prediction_total = []
-        X_vals = np.ndarray((0,5)) if nn else np.ndarray((0,6))
+        X_vals = np.ndarray((0, 5)) if nn else np.ndarray((0, 6))
 
         for i in range(len(time_list)):
             # DT: cluster min hour day week holiday
-            # NN: x_hours x_days x_mins cluster is_ph 
+            # NN: x_hours x_days x_mins cluster is_ph
             for cluster in range(25):
                 if nn:
-                    test = np.array([time_list[i][1]] + day_week_holiday[:-1] + [time_list[i][0]] + [cluster] + [day_week_holiday[-1]]).reshape(1, -1)
+                    test = np.array([time_list[i][1]] + day_week_holiday[:-1] + [
+                                    time_list[i][0]] + [cluster] + [day_week_holiday[-1]]).reshape(1, -1)
                 else:
-                    test = np.array([cluster] + time_list[i] + day_week_holiday).reshape(1,-1)
-    
+                    test = np.array([cluster] + time_list[i] +
+                                    day_week_holiday).reshape(1, -1)
+
                 X_vals = np.vstack([X_vals, test[0]])
 
         for i in range(len(time_list)):
             for cluster in range(25):
                 if nn:
-                    test = np.array([time_list[i][1]] + next_date_day_week_holiday[:-1] + [time_list[i][0]] + [cluster] + [next_date_day_week_holiday[-1]]).reshape(1, -1)
+                    test = np.array([time_list[i][1]] + next_date_day_week_holiday[:-1] + [
+                                    time_list[i][0]] + [cluster] + [next_date_day_week_holiday[-1]]).reshape(1, -1)
                 else:
-                    test = np.array([cluster] + time_list[i] + next_date_day_week_holiday).reshape(1,-1)
+                    test = np.array([cluster] + time_list[i] +
+                                    next_date_day_week_holiday).reshape(1, -1)
 
-                X_vals= np.vstack([X_vals, test[0]])
-        
+                X_vals = np.vstack([X_vals, test[0]])
+
         print(X_vals.shape)
         print(X_vals[:50])
         predictions = MLmodel.predict(X_vals).ravel()
@@ -119,7 +125,8 @@ def index():
 
             # else:
             for cluster in range(25):
-                prediction_total[i][cluster] = prediction_total[i+1][cluster] - prediction_total[i][cluster]
+                prediction_total[i][cluster] = prediction_total[i +
+                                                                1][cluster] - prediction_total[i][cluster]
 
         return jsonify(color_bar_values=get_colour_bar(), predicted_values=prediction_total)
     # Values are sent in [hour:minute][cluster]

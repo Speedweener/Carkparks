@@ -3,7 +3,7 @@
 <head>
   <title>Google Maps - Gravity Plot</title>
 
-  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/w3local.css') }}" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
 
@@ -17,20 +17,32 @@
 
   <div class="container-fluid">
     <div class="row" style="width: 100%; height: 80%;">
+      <label class="label">Carmageddon: The Traffic Flow Predictor</label>
       <div class="col-md-3 ">
         <div>
-          <label>Choose a date</label>
           <form method="POST" action="" enctype="multipart/form-data" id="form_data">
-            <p> <label>Date:</label>
+            <p class="inputs">
+              <label> Please choose date and model:</label>
+            </p>
+            <p class="inputs"> <label>Date:</label>
               <input type="date" id="date" name="date" value="2022-10-29">
               <label for="model">Choose a model:</label>
               <select id="model" name="model">
-                <option value="nn">Neural Network</option>
+                <option  value="nn">Neural Network</option>
                 <option value="dt">Decision Tree</option>
               </select>
+              <p class="inputs"><input type="submit" value="Submit"></p>
             </p>
-            <p><input type="submit" value="Submit"></p>
+           
           </form>
+
+          <div class="col-md-3multiple">
+            <div class="w3-bar-block w3-white" style="height: 10px" id="color_bar">
+            </div>
+          </div>
+          
+
+
         </div>
 
 
@@ -43,10 +55,10 @@
         <div id="map_canvas" style="width: 100%; height: 100%;"></div>
       </div>
 
-      <div class="col-md-3">
+      <!-- <div class="col-md-3multiple">
         <div class="w3-bar-block w3-white" style="height: 10px" id="color_bar">
         </div>
-      </div>
+      </div> -->
 
     </div>
   </div>
@@ -79,9 +91,10 @@
     <img src="{{ url_for('static', filename='images/circle.png') }}" id="circle_marker">
   </div>
 
-
+<!-- 
   <script type="text/javascript"
-  src="https://maps.googleapis.com/maps/api/js?&libraries=visualization,geometry"></script>
+  src="https://maps.googleapis.com/maps/api/js?&libraries=visualization,geometry"></script> -->
+  <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCMCva8uO0o8Cb3slMKyWbYOZAMH38zOhQ&libraries=visualization"></script>
 </body>
 
 </html>
